@@ -148,6 +148,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.1+2"
+  firebase_database:
+    dependency: "direct main"
+    description:
+      name: firebase_database
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.1.6"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -163,6 +170,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flux_validator_dart:
+    dependency: "direct main"
+    description:
+      name: flux_validator_dart
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.3"
   google_sign_in:
     dependency: "direct main"
     description:

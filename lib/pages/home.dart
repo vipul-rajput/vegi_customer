@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_pro/carousel_pro.dart';
 import 'package:test1_vegifresh/components/horizontal_listview.dart';
@@ -5,6 +6,8 @@ import 'package:test1_vegifresh/components/products.dart';
 import 'package:test1_vegifresh/pages/cart.dart';
 // ignore: implementation_imports
 import 'package:flutter/src/painting/image_resolution.dart';
+
+import 'login.dart';
 // TODO: Copy code from main of Saurabh and replace here refer vid 24
 class HomePage extends StatefulWidget {
   @override
@@ -136,14 +139,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                 )),
             InkWell(
-                onTap: () {},
-                child: ListTile(
-                  title: Text("About"),
-                  leading: Icon(
-                    Icons.help,
-                    color: Colors.green,
-                  ),
-                )),
+              onTap: (){
+                FirebaseAuth.instance.signOut().then((value){
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Login()));
+                });
+              },
+              child: ListTile(
+                title: Text('Log out'),
+                leading: Icon(Icons.transit_enterexit, color: Colors.grey,),
+              ),
+            ),
           ],
         ),
       ),
