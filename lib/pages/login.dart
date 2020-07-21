@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flux_validator_dart/flux_validator_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test1_vegifresh/pages/signup.dart';
 import 'package:toast/toast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -12,107 +14,227 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  final GoogleSignIn googleSignIn = new GoogleSignIn();
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+
+  final _formKey = GlobalKey<FormState>();
+  TextEditingController _emailTextController = TextEditingController();
+  TextEditingController _passwordTextController = TextEditingController();
+
   SharedPreferences preferences;
-  bool loading;
+  bool loading = false;
   bool isLogedin = false;
 
+
   @override
-  void initState(){
+  void initState() {
     super.initState();
     isSignedIn();
   }
+
   void isSignedIn() async {
     setState(() {
       loading = true;
     });
-    preferences = await SharedPreferences.getInstance();
-    isLogedin = await googleSignIn.isSignedIn();
-    if(isLogedin){
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
+
+    await firebaseAuth.currentUser().then((user){
+      if(user != null){
+        setState(() => isLogedin = true);
+      }
+    });
+    if (isLogedin) {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => HomePage()));
     }
+
     setState(() {
       loading = false;
     });
   }
-  Future handleSignIn() async{
-    preferences = await SharedPreferences.getInstance();
-    setState(() {
-      loading = true;
-    });
-    GoogleSignInAccount googleUser = await googleSignIn.signIn();
-    GoogleSignInAuthentication googleSignInAuthentication = await googleUser.authentication;
-    AuthCredential credential = await GoogleAuthProvider.getCredential(
-        idToken: googleSignInAuthentication.idToken, accessToken: googleSignInAuthentication.accessToken
-    ); // AuthCredential === firebase of tutor
-    AuthResult firebaseUser = (await firebaseAuth.signInWithCredential(credential));
-    //FirebaseUser firebaseUser = await firebaseAuth.currentUser();
-    if(FirebaseUser != null){
-      final QuerySnapshot result = await Firestore.instance.collection("users").where("id", isEqualTo: FirebaseUser).getDocuments();
-      final List<DocumentSnapshot> documents = result.documents;
-      if(documents.length == 0){
-        Firestore.instance.collection("user").document(firebaseUser.user.uid).setData({
-          "id" : firebaseUser.user.uid,
-          "username": firebaseUser.user.displayName,
-          "profilePicture": firebaseUser.user.photoUrl,
-        });
-        await preferences.setString("id",firebaseUser.user.uid);
-        await preferences.setString("username", firebaseUser.user.displayName);
-        await preferences.setString("photoUrl", firebaseUser.user.displayName);//errpr
-      } else{
-      await preferences.setString("id", documents[0]['id']);
-      await preferences.setString("username", documents[0]['username']);
-      await preferences.setString("photoUrl", documents[0]['photoUrl']);
-    }
-      Toast.show("Logged in Successful", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
-      setState(() {
-        loading = false;
-      });
-    }else{Toast.show("Login Failed", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);}
-  }
+
+//  Future handleSignIn() async {
+//    setState(() {
+//      loading = true;
+//    });
+//  }
+
   @override
   Widget build(BuildContext context) {
+    double height = MediaQuery.of(context).size.height / 3;
     return Scaffold(
-    body: Stack(
-      children: <Widget>[
-        Image.asset('images/back.jpg',
-          fit: BoxFit.cover,
-        width: double.infinity,
+      body: Stack(
+        children: <Widget>[
+          Image.asset(
+            'images/back.jpg',
+            fit: BoxFit.fill,
+            width: double.infinity,
+            height: double.infinity,
           ),
-        Container(
-        alignment: Alignment.topCenter,
-          child: Image.asset('images/logo.png'
-          width: 150.0,
-          height: 150.0,
+          Container(
+            color: Colors.black.withOpacity(0.5),
+            width: double.infinity,
+            height: double.infinity,
           ),
-        ),
-        Visibility(
-          visible: loading ?? true,
-          child: Center(
-            child: Container(
-              alignment: Alignment.center,
-               color: Colors.white.withOpacity(0.7),
-              child: CircularProgressIndicator(
-                valueColor:  AlwaysStoppedAnimation<Color>(Colors.red),
-              )
+          Container(
+              alignment: Alignment.topCenter,
+              child: Image.asset(
+                'images/logo.png',
+                width: 280.0,
+                height: 240.0,
+              )),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 200.0),
+              child: Center(
+                child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(14.0, 8.0, 14.0, 8.0),
+                          child: Material(
+                            borderRadius: BorderRadius.circular(10.0),
+                            color: Colors.white.withOpacity(0.4),
+                            elevation: 0.0,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 12.0),
+                              child: TextFormField(
+                                controller: _emailTextController,
+                                decoration: InputDecoration(
+                                  hintText: "Email",
+                                  icon: Icon(Icons.alternate_email),
+                                ),
+                                  validator: (value) {
+                                    if (Validator.email(value)) return 'Please input a valid email.';
+                                    return null;
+                                  }
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        Padding(
+                          padding:
+                          const EdgeInsets.fromLTRB(14.0, 8.0, 14.0, 8.0),
+                          child: Material(
+                            borderRadius: BorderRadius.circular(10.0),
+                            color: Colors.white.withOpacity(0.4),
+                            elevation: 0.0,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 12.0),
+                              child: TextFormField(
+                                controller: _passwordTextController,
+                                decoration: InputDecoration(
+                                  hintText: "Password",
+                                  icon: Icon(Icons.lock_outline),
+                                ),
+                                validator: (value) {
+                                  if (value.isEmpty) {
+                                    return "The password field cannot be empty";
+                                  } else if (value.length < 6) {
+                                    return "the password has to be at least 6 characters long";
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        Padding(
+                          padding:
+                          const EdgeInsets.fromLTRB(14.0, 8.0, 14.0, 8.0),
+                          child: Material(
+                              borderRadius: BorderRadius.circular(20.0),
+                              color: Colors.red.shade700,
+                              elevation: 0.0,
+                              child: MaterialButton(
+                                onPressed: () {},
+                                minWidth: MediaQuery.of(context).size.width,
+                                child: Text(
+                                  "Login",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20.0),
+                                ),
+                              )),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "Forgot password",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+//                          Expanded(child: Container()),
+
+                        Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: InkWell(
+                                onTap: (){
+                                  Navigator.push(context, MaterialPageRoute(builder: (context) => SignUp()));
+                                },
+                                child: Text("Sign up", textAlign: TextAlign.center, style: TextStyle(color: Colors.red),))
+                        ),
+                      ],
+                    )),
+              ),
             ),
           ),
-        )
-      ],
-    ),
-      bottomNavigationBar: Container(
-          child: Padding(
-            padding: const EdgeInsets.only(left:12.0, right:12.0, top:8.0, bottom:12.0),
-            child: FlatButton(
-              color: Colors.red,
-              onPressed: (){
-                handleSignIn();
-              }, child: Text("Sign In"),
+          Visibility(
+            visible: loading ?? true,
+            child: Center(
+              child: Container(
+                alignment: Alignment.center,
+                color: Colors.white.withOpacity(0.5),
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                ),
+              ),
             ),
-          ),
-      ) ,
+          )
+        ],
+      ),
     );
-}
+  }
 }
 
+
+
+
+
+
+
+// Google Auth
+//                    Divider(color: Colors.white, thickness: 2.0,),
+//                    Text("Other Sign In Options", style: TextStyle(
+//                      fontSize: 15.0,
+//                      color: Colors.white,
+//                    ),),
+//                    Padding(
+//                      padding:
+//                      const EdgeInsets.fromLTRB(14.0, 10.0, 14.0, 8.0),
+//                      child: Material(
+//                          borderRadius: BorderRadius.circular(20.0),
+//                          color: Colors.blue.withOpacity(0.8),
+//                          elevation: 0.0,
+//                          child: MaterialButton(
+//                            onPressed: () {
+//                              handleSignIn();
+//                              },
+//                            minWidth: MediaQuery.of(context).size.width,
+//                            child: Text(
+//                              "Sign In With Google",
+//                              textAlign: TextAlign.center,
+//                              style: TextStyle(
+//                                  color: Colors.white,
+//                                  fontWeight: FontWeight.bold,
+//                                  fontSize: 20.0),
+//                            ),
+//                          )),
+//                    ),
